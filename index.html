@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我們的班級網頁</title>
+    <style>
+        /* ==================== 全局與色彩設定 ==================== */
+        :root {
+            --primary-color: #FF85A1;
+            --secondary-color: #FFD166;
+            --accent-color: #4EA8DE;
+            --bg-color: #FDFFFC;
+            --card-bg: #FFFFFF;
+            --text-color: #2B2D42;
+            --green-color: #06D6A0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "MicroSoft JhengHei", "PingFang TC", sans-serif;
+        }
+
+        body {
+            background-color: #F0F9FF;
+            color: var(--text-color);
+            padding-bottom: 50px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            border-bottom-left-radius: 30px;
+            border-bottom-right-radius: 30px;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .header-title-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        #site-title {
+            font-size: 2.2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .auth-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background-color: white;
+            color: var(--primary-color);
+            border: 2px solid white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .auth-btn:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .section-card {
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            border: 3px solid #EAEAEA;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: var(--accent-color);
+            border-bottom: 3px dashed var(--secondary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 按鈕樣式 */
+        .btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            background-color: #3b82f6;
+        }
+
+        .btn-success { background-color: var(--green-color); }
+        .btn-danger { background-color: #ef4444; }
+        
+        .admin-only { display: none !important; }
+        body.is-admin .admin-only { display: inline-block !important; }
+        body.is-admin .admin-block { display: block !important; }
+
+        /* 公布欄 */
+        .bulletin-form {
+            background-color: #FFF9E6;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .bulletin-form input, .bulletin-form textarea {
+            padding: 10px;
+            border: 2px solid #FFE082;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+        .post-item {
+            background-color: #F8FAFC;
+            border-left: 5px solid var(--accent-color);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+        .post-title { font-weight: bold; font-size: 1.2rem; margin-bottom: 5px; color: #1E293B; }
+        .post-date { font-size: 0.8rem; color: #64748B; margin-bottom: 10px; }
+        .post-content { white-space: pre-line; line-height: 1.6; }
+        .post-file { margin-top: 10px; padding: 8px; background: #E2E8F0; border-radius: 8px; display: inline-block; }
+
+        /* 課表 */
+        .timetable-container { overflow-x: auto; }
+        .timetable { width: 100%; border-collapse: collapse; text-align: center; }
+        .timetable th, .timetable td { border: 2px solid #E2E8F0; padding: 12px 8px; border-radius: 8px; }
+        .timetable th { background-color: var(--secondary-color); color: #4A3B00; }
+        .timetable td { background-color: #FAFAFA; cursor: default; }
+        body.is-admin .timetable td.editable { cursor: pointer; background-color: #EFF6FF; }
+        body.is-admin .timetable td.editable:hover { background-color: #DBEAFE; }
+
+        /* 相簿 */
+        .album-card { background-color: #FAF5FF; border: 2px solid #E9D5FF; border-radius: 15px; padding: 15px; margin-bottom: 25px; }
+        .album-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #DDD6FE; }
+        .album-title { font-size: 1.2rem; font-weight: bold; color: #6B21A8; }
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
+        .gallery-item { width: 100%; height: 130px; object-fit: cover; border-radius: 12px; cursor: pointer; transition: transform 0.2s; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .gallery-item:hover { transform: scale(1.05); }
+        
+        .lightbox { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); justify-content: center; align-items: center; z-index: 1000; }
+        .lightbox-content { position: relative; max-width: 85%; max-height: 85%; display: flex; justify-content: center; align-items: center; }
+        .lightbox img { max-width: 100%; max-height: 80vh; border-radius: 10px; box-shadow: 0 0 20px rgba(255,255,255,0.2); }
+        .lightbox-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255, 255, 255, 0.3); color: white; border: none; font-size: 2rem; padding: 10px 18px; cursor: pointer; border-radius: 50%; user-select: none; }
+        .lightbox-btn:hover { background: rgba(255, 255, 255, 0.7); color: black; }
+        .lightbox-prev { left: -60px; }
+        .lightbox-next { right: -60px; }
+        .lightbox-close { position: absolute; top: -40px; right: 0; color: white; font-size: 1.8rem; cursor: pointer; font-weight: bold; }
+
+        /* 影片 */
+        .video-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        .video-card { background: #F1F5F9; padding: 15px; border-radius: 15px; border: 1px solid #E2E8F0; text-align: center; }
+        .video-title { font-size: 1.1rem; font-weight: bold; color: #334155; margin-bottom: 12px; text-align: left; border-left: 4px solid var(--accent-color); padding-left: 10px; }
+        .video-thumbnail-container { position: relative; border-radius: 10px; overflow: hidden; margin-bottom: 15px; display: block; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .video-thumbnail { width: 100%; display: block; transition: transform 0.3s; }
+        .video-thumbnail-container:hover .video-thumbnail { transform: scale(1.05); }
+        .play-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; color: rgba(255, 255, 255, 0.9); text-shadow: 0 2px 8px rgba(0,0,0,0.6); pointer-events: none; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <button id="auth-btn" class="auth-btn" onclick="toggleAuth()">教師登入</button>
+        <div class="header-title-container">
+            <h1 id="site-title">🎈 三年二班的歡樂小天地 🎈</h1>
+            <button class="btn btn-success admin-only" onclick="editSiteTitle()">修改名稱</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- 1. 班級公布欄 -->
+        <div class="section-card">
+            <div class="section-title">
+                <span>📢 班級公布欄</span>
+            </div>
+            <div class="bulletin-form admin-only admin-block" style="display:none;">
+                <h3>✏️ 發布新公告</h3>
+                <input type="text" id="post-title-input" placeholder="公告標題">
+                <textarea id="post-content-input" rows="3" placeholder="公告內文..."></textarea>
+                <label style="font-size: 0.9rem; font-weight: bold;">附加檔案 (相片/影片/PDF/文字檔):</label>
+                <input type="file" id="post-file-input">
+                <button class="btn btn-success" onclick="addPost()" style="margin-top:5px;">發布公告</button>
+            </div>
+            <div id="bulletin-list"></div>
+        </div>
+
+        <!-- 2. 班級課表 -->
+        <div class="section-card">
+            <div class="section-title">
+                <span>🗓️ 班級課表</span>
+                <span class="admin-only" style="font-size: 0.8rem; color: #666;">（提示：登入後點擊課表格子即可直接修改內容）</span>
+            </div>
+            <div class="timetable-container">
+                <table class="timetable">
+                    <thead>
+                        <tr>
+                            <th>節次 / 星期</th>
+                            <th>一</th>
+                            <th>二</th>
+                            <th>三</th>
+                            <th>四</th>
+                            <th>五</th>
+                        </tr>
+                    </thead>
+                    <tbody id="timetable-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 3. 班級生活花絮 -->
+        <div class="section-card">
+            <div class="section-title">
+                <span>📸 班級生活花絮</span>
+            </div>
+            <div class="admin-only admin-block" style="display:none; margin-bottom: 20px; background: #F3E8FF; padding: 15px; border-radius: 12px;">
+                <h3 style="margin-bottom:10px; color:#6B21A8;">新增活動相簿</h3>
+                <input type="text" id="album-title-input" placeholder="請輸入活動名稱（例如：校慶運動會）" style="width:100%; padding:8px; border-radius:8px; border:1px solid #CCC; margin-bottom:10px;">
+                <label style="font-weight: bold;">選擇照片 (1-30 張)：</label><br><br>
+                <input type="file" id="gallery-upload" multiple accept="image/*">
+                <button class="btn btn-success" id="upload-album-btn" onclick="uploadAlbum()" style="margin-top:10px;">上傳相簿</button>
+                <span id="upload-status" style="margin-left: 10px; color: #6B21A8; font-weight: bold; display: none;">處理中，請稍候...⏳</span>
+            </div>
+            <div id="album-container"></div>
+        </div>
+
+        <!-- 4. 班級影片 -->
+        <div class="section-card">
+            <div class="section-title">
+                <span>🎬 班級影片專區</span>
+            </div>
+            <div class="admin-only admin-block" style="display:none; margin-bottom: 20px; background: #FCE7F3; padding: 15px; border-radius: 12px;">
+                <label style="font-weight: bold;">新增 YouTube 影片：</label>
+                <div style="display:flex; flex-direction: column; gap: 10px; margin-top: 8px;">
+                    <input type="text" id="youtube-title-input" placeholder="請輸入影片名稱（例如：校慶趣味競賽）" style="padding:8px; border-radius:8px; border:1px solid #CCC;">
+                    <div style="display:flex; gap: 10px;">
+                        <input type="text" id="youtube-url-input" placeholder="請貼上 YouTube 影片網址" style="flex:1; padding:8px; border-radius:8px; border:1px solid #CCC;">
+                        <button class="btn btn-success" onclick="addVideo()">新增影片</button>
+                    </div>
+                </div>
+            </div>
+            <div class="video-grid" id="video-grid"></div>
+        </div>
+    </div>
+
+    <!-- 照片放大燈箱 Modal -->
+    <div class="lightbox" id="lightbox">
+        <div class="lightbox-content">
+            <span class="lightbox-close" onclick="closeLightbox()">✕</span>
+            <button class="lightbox-btn lightbox-prev" onclick="changePhoto(-1)">❮</button>
+            <img id="lightbox-img" src="" alt="放大照片">
+            <button class="lightbox-btn lightbox-next" onclick="changePhoto(1)">❯</button>
+        </div>
+    </div>
+
+    <!-- ==================== JavaScript 邏輯程式碼 ==================== -->
+    <script>
+        let isAdmin = false;
+
+        let siteTitle = localStorage.getItem('siteTitle') || "🎈 三年二班的歡樂小天地 🎈";
+        let posts = JSON.parse(localStorage.getItem('posts')) || [];
+        
+        let defaultTimetable = [
+            ["國語", "數學", "自然", "社會", "英語"],
+            ["數學", "國語", "體育", "藝術", "國語"],
+            ["綜合", "健康", "國語", "數學", "閱讀"],
+            ["社會", "自然", "英語", "綜合", "本土"],
+            ["午休", "午休", "午休", "午休", "午休"],
+            ["彈性", "社團", "綜合", "綜合", "彈性"], 
+            ["彈性", "彈性", "彈性", "彈性", "彈性"]  
+        ];
+        
+        let timetable = JSON.parse(localStorage.getItem('timetable')) || defaultTimetable;
+        
+        while (timetable.length < 7) {
+            timetable.push(["", "", "", "", ""]);
+        }
+        localStorage.setItem('timetable', JSON.stringify(timetable));
+
+        let albums = JSON.parse(localStorage.getItem('albums')) || [];
+        let videos = JSON.parse(localStorage.getItem('videos')) || [];
+
+        let currentAlbumPhotos = [];
+        let currentPhotoIndex = 0;
+
+        window.onload = function() {
+            document.getElementById('site-title').innerText = siteTitle;
+            renderPosts();
+            renderTimetable();
+            renderAlbums();
+            renderVideos();
+
+            document.addEventListener('keydown', function(e) {
+                let lightbox = document.getElementById('lightbox');
+                if (lightbox.style.display === 'flex') {
+                    if (e.key === 'ArrowLeft') changePhoto(-1);
+                    if (e.key === 'ArrowRight') changePhoto(1);
+                    if (e.key === 'Escape') closeLightbox();
+                }
+            });
+        };
+
+        function toggleAuth() {
+            if (!isAdmin) {
+                let password = prompt("請輸入教師編輯密碼：");
+                if (password === "0147") {
+                    isAdmin = true;
+                    document.body.classList.add('is-admin');
+                    document.getElementById('auth-btn').innerText = "退出管理模式";
+                    document.getElementById('auth-btn').style.backgroundColor = "#ef4444";
+                    alert("驗證成功！已解鎖編輯權限。");
+                    renderTimetable();
+                } else if (password !== null) {
+                    alert("密碼錯誤！");
+                }
+            } else {
+                isAdmin = false;
+                document.body.classList.remove('is-admin');
+                document.getElementById('auth-btn').innerText = "教師登入";
+                document.getElementById('auth-btn').style.backgroundColor = "white";
+                renderTimetable();
+            }
+        }
+
+        function editSiteTitle() {
+            let newTitle = prompt("請輸入新的網頁名稱：", siteTitle);
+            if (newTitle && newTitle.trim() !== "") {
+                siteTitle = newTitle.trim();
+                document.getElementById('site-title').innerText = siteTitle;
+                localStorage.setItem('siteTitle', siteTitle);
+            }
+        }
+
+        /* ---------------- 公布欄功能 ---------------- */
+        function addPost() {
+            let titleInput = document.getElementById('post-title-input');
+            let contentInput = document.getElementById('post-content-input');
+            let fileInput = document.getElementById('post-file-input');
+
+            if (!titleInput.value.trim()) { alert('請輸入公告標題！'); return; }
+
+            let fileData = null;
+            if (fileInput.files.length > 0) {
+                let file = fileInput.files[0];
+                fileData = { name: file.name, url: URL.createObjectURL(file) };
+            }
+
+            let newPost = {
+                id: Date.now(),
+                title: titleInput.value.trim(),
+                date: new Date().toLocaleDateString(),
+                content: contentInput.value.trim(),
+                file: fileData
+            };
+
+            posts.unshift(newPost);
+            try {
+                localStorage.setItem('posts', JSON.stringify(posts));
+                renderPosts();
+                titleInput.value = ''; contentInput.value = ''; fileInput.value = '';
+            } catch (e) {
+                alert("儲存空間已滿，請先刪除一些舊相簿或舊影片再試。");
+                posts.shift();
+            }
+        }
+
+        function deletePost(id) {
+            if (confirm('確定要刪除這篇公告嗎？')) {
+                posts = posts.filter(p => p.id !== id);
+                localStorage.setItem('posts', JSON.stringify(posts));
+                renderPosts();
+            }
+        }
+
+        function renderPosts() {
+            let listEl = document.getElementById('bulletin-list');
+            listEl.innerHTML = '';
+            posts.forEach(post => {
+                let fileHtml = post.file ? `<div class="post-file">📎 附件檔：<a href="${post.file.url}" target="_blank" download="${post.file.name}">${post.file.name}</a></div>` : '';
+                listEl.innerHTML += `
+                    <div class="post-item">
+                        <div class="post-title">${post.title}</div>
+                        <div class="post-date">📅 發布日期：${post.date}</div>
+                        <div class="post-content">${post.content}</div>
+                        ${fileHtml}
+                        <button class="btn btn-danger admin-only" onclick="deletePost(${post.id})" style="position:absolute; top:15px; right:15px;">刪除</button>
+                    </div>
+                `;
+            });
+        }
+
+        /* ---------------- 課表功能 ---------------- */
+        function renderTimetable() {
+            let tbody = document.getElementById('timetable-body');
+            tbody.innerHTML = '';
+            
+            for (let row = 0; row < 7; row++) {
+                let tr = document.createElement('tr');
+                let th = document.createElement('th');
+                th.innerText = `第 ${row + 1} 節`;
+                tr.appendChild(th);
+                
+                for (let col = 0; col < 5; col++) {
+                    let td = document.createElement('td');
+                    td.innerText = timetable[row][col] || "";
+                    td.className = "editable";
+                    td.onclick = function() {
+                        if (isAdmin) {
+                            let newSubject = prompt(`修改 第${row+1}節 星期${['一','二','三','四','五'][col]} 的科目：`, td.innerText);
+                            if (newSubject !== null) {
+                                timetable[row][col] = newSubject.trim();
+                                localStorage.setItem('timetable', JSON.stringify(timetable));
+                                renderTimetable();
+                            }
+                        }
+                    };
+                    tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+            }
+        }
+
+        /* ---------------- 相簿與圖片處理功能 ---------------- */
+
+        // [新增] 圖片壓縮與調整大小的功能 (核心解決方案)
+        function compressImage(file, maxWidth = 800) {
+            return new Promise((resolve) => {
+                let reader = new FileReader();
+                reader.onload = function(event) {
+                    let img = new Image();
+                    img.onload = function() {
+                        let canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+
+                        // 如果圖片寬度大於限制，進行等比例縮小
+                        if (width > maxWidth) {
+                            height = Math.round((maxWidth / width) * height);
+                            width = maxWidth;
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        let ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        // 將圖片轉為較省空間的 JPEG 格式，品質設定為 0.6 (60%)
+                        let dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                        resolve(dataUrl);
+                    };
+                    // 如果載入錯誤（例如不是圖片），則回傳 null
+                    img.onerror = () => resolve(null);
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function uploadAlbum() {
+            let titleInput = document.getElementById('album-title-input');
+            let fileInput = document.getElementById('gallery-upload');
+            let uploadBtn = document.getElementById('upload-album-btn');
+            let statusText = document.getElementById('upload-status');
+            
+            let title = titleInput.value.trim() || "班級精彩花絮";
+
+            if (fileInput.files.length === 0) {
+                alert("請至少選擇一張照片！");
+                return;
+            }
+            if (fileInput.files.length > 30) {
+                alert("每次最多選擇 30 張照片！");
+                return;
+            }
+
+            // 鎖定按鈕，顯示處理中（因為壓縮照片需要一點點時間）
+            uploadBtn.disabled = true;
+            statusText.style.display = 'inline-block';
+
+            // 將所有選擇的照片放入壓縮工具中處理
+            let photoPromises = Array.from(fileInput.files).map(file => compressImage(file));
+
+            Promise.all(photoPromises).then(photos => {
+                // 過濾掉可能損壞或非圖片的空資料
+                photos = photos.filter(p => p !== null);
+
+                let newAlbum = {
+                    id: Date.now(),
+                    title: title,
+                    date: new Date().toLocaleDateString(),
+                    photos: photos
+                };
+                
+                albums.unshift(newAlbum);
+
+                // [新增] 採用 Try-Catch 安全防護，避免空間爆滿導致當機
+                try {
+                    localStorage.setItem('albums', JSON.stringify(albums));
+                    renderAlbums();
+                    titleInput.value = '';
+                    fileInput.value = '';
+                    alert("✅ 相簿新增成功！");
+                } catch (error) {
+                    console.error("Storage Error:", error);
+                    // 復原記憶體中的陣列
+                    albums.shift();
+                    alert("⚠️ 儲存失敗！\n瀏覽器的空間已經滿了。\n\n💡 解決方法：請先「刪除」一些舊的相簿，再來上傳新的照片。");
+                }
+
+                // 恢復按鈕狀態
+                uploadBtn.disabled = false;
+                statusText.style.display = 'none';
+            });
+        }
+
+        function deleteAlbum(id) {
+            if (confirm('確定要刪除整個活動相簿嗎？(刪除後可釋放儲存空間)')) {
+                // 先備份目前的陣列，以防萬一
+                let originalAlbums = [...albums]; 
+                
+                albums = albums.filter(a => a.id !== id);
+                
+                // [新增] 安全防護
+                try {
+                    localStorage.setItem('albums', JSON.stringify(albums));
+                    renderAlbums();
+                } catch (error) {
+                    // 如果還是報錯，將資料還原並提示
+                    albums = originalAlbums;
+                    alert("⚠️ 刪除時發生錯誤，請重新整理網頁後再試。");
+                }
+            }
+        }
+
+        function renderAlbums() {
+            let container = document.getElementById('album-container');
+            container.innerHTML = '';
+
+            albums.forEach(album => {
+                let photosHtml = album.photos.map((imgSrc, idx) => `
+                    <img src="${imgSrc}" class="gallery-item" onclick="openLightbox(${album.id}, ${idx})">
+                `).join('');
+
+                container.innerHTML += `
+                    <div class="album-card">
+                        <div class="album-header">
+                            <div class="album-title">📁 ${album.title} <span style="font-size:0.8rem; color:#888;">(${album.date})</span></div>
+                            <button class="btn btn-danger admin-only" onclick="deleteAlbum(${album.id})">刪除相簿</button>
+                        </div>
+                        <div class="gallery-grid">${photosHtml}</div>
+                    </div>
+                `;
+            });
+        }
+
+        function openLightbox(albumId, photoIndex) {
+            let targetAlbum = albums.find(a => a.id === albumId);
+            if (targetAlbum) {
+                currentAlbumPhotos = targetAlbum.photos;
+                currentPhotoIndex = photoIndex;
+                updateLightboxPhoto();
+                document.getElementById('lightbox').style.display = 'flex';
+            }
+        }
+
+        function updateLightboxPhoto() {
+            document.getElementById('lightbox-img').src = currentAlbumPhotos[currentPhotoIndex];
+        }
+
+        function changePhoto(step) {
+            currentPhotoIndex += step;
+            if (currentPhotoIndex < 0) {
+                currentPhotoIndex = currentAlbumPhotos.length - 1;
+            } else if (currentPhotoIndex >= currentAlbumPhotos.length) {
+                currentPhotoIndex = 0;
+            }
+            updateLightboxPhoto();
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').style.display = 'none';
+        }
+
+        /* ---------------- 影片功能 ---------------- */
+        function addVideo() {
+            let titleInput = document.getElementById('youtube-title-input');
+            let urlInput = document.getElementById('youtube-url-input');
+            
+            let title = titleInput.value.trim();
+            let url = urlInput.value.trim();
+            
+            if (!title) {
+                title = "精彩影片";
+            }
+
+            let videoId = extractYouTubeID(url);
+
+            if (videoId) {
+                let newVideo = { id: videoId, title: title };
+                videos.unshift(newVideo);
+                
+                try {
+                    localStorage.setItem('videos', JSON.stringify(videos));
+                    renderVideos();
+                    titleInput.value = '';
+                    urlInput.value = '';
+                } catch (e) {
+                    videos.shift();
+                    alert("儲存空間已滿，請先刪除舊相簿或影片再試。");
+                }
+            } else {
+                alert('請輸入有效的 YouTube 影片網址！');
+            }
+        }
+
+        function extractYouTubeID(url) {
+            let regExp = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+            let match = url.match(regExp);
+            if (match && match[1]) return match[1];
+            
+            let matchOld = url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|shorts\/|watch\?v=|\&v=)([^#\&\?]*).*/);
+            if (matchOld && matchOld[2].length === 11) return matchOld[2];
+            
+            return null;
+        }
+
+        function deleteVideo(index) {
+            if (confirm('確定要刪除這部影片嗎？')) {
+                let originalVideos = [...videos];
+                videos.splice(index, 1);
+                try {
+                    localStorage.setItem('videos', JSON.stringify(videos));
+                    renderVideos();
+                } catch(e) {
+                    videos = originalVideos;
+                    alert("刪除失敗，請重新整理網頁再試。");
+                }
+            }
+        }
+
+        function renderVideos() {
+            let grid = document.getElementById('video-grid');
+            grid.innerHTML = '';
+            
+            videos.forEach((item, index) => {
+                let videoId = "";
+                let videoTitle = "🎬 精彩影片";
+
+                if (typeof item === 'string') {
+                    videoId = item.length === 11 ? item : extractYouTubeID(item);
+                } else if (typeof item === 'object') {
+                    videoId = item.id;
+                    videoTitle = "🎬 " + item.title;
+                }
+                
+                if(videoId) {
+                    let watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+                    let thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+                    
+                    grid.innerHTML += `
+                        <div class="video-card">
+                            <div class="video-title">${videoTitle}</div>
+                            <a href="${watchUrl}" target="_blank" class="video-thumbnail-container" title="點擊在新分頁播放">
+                                <img src="${thumbnailUrl}" alt="YouTube 影片縮圖" class="video-thumbnail">
+                                <div class="play-icon">▶️</div>
+                            </a>
+                            <a href="${watchUrl}" target="_blank" class="btn" style="display:block; text-decoration:none; text-align:center;">🔗 前往 YouTube 觀看</a>
+                            <button class="btn btn-danger admin-only" onclick="deleteVideo(${index})" style="margin-top:10px; width:100%;">刪除影片</button>
+                        </div>
+                    `;
+                }
+            });
+        }
+    </script>
+</body>
+</html>
