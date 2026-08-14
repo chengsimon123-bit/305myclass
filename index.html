@@ -4,8 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我們的班級網頁</title>
+
+    <!-- 👉 [新增] 載入 Firebase 官方 SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
+
     <style>
-        /* ==================== 全局與色彩設定 ==================== */
+        /* ==================== 全局與色彩設定 (完全保留原樣式) ==================== */
         :root {
             --primary-color: #FF85A1;
             --secondary-color: #FFD166;
@@ -97,7 +102,6 @@
             align-items: center;
         }
 
-        /* 按鈕樣式 */
         .btn {
             background-color: var(--accent-color);
             color: white;
@@ -122,7 +126,6 @@
         body.is-admin .admin-only { display: inline-block !important; }
         body.is-admin .admin-block { display: block !important; }
 
-        /* 公布欄 */
         .bulletin-form {
             background-color: #FFF9E6;
             padding: 15px;
@@ -151,7 +154,6 @@
         .post-content { white-space: pre-line; line-height: 1.6; }
         .post-file { margin-top: 10px; padding: 8px; background: #E2E8F0; border-radius: 8px; display: inline-block; }
 
-        /* 課表 */
         .timetable-container { overflow-x: auto; }
         .timetable { width: 100%; border-collapse: collapse; text-align: center; }
         .timetable th, .timetable td { border: 2px solid #E2E8F0; padding: 12px 8px; border-radius: 8px; }
@@ -160,7 +162,6 @@
         body.is-admin .timetable td.editable { cursor: pointer; background-color: #EFF6FF; }
         body.is-admin .timetable td.editable:hover { background-color: #DBEAFE; }
 
-        /* 相簿 */
         .album-card { background-color: #FAF5FF; border: 2px solid #E9D5FF; border-radius: 15px; padding: 15px; margin-bottom: 25px; }
         .album-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #DDD6FE; }
         .album-title { font-size: 1.2rem; font-weight: bold; color: #6B21A8; }
@@ -177,7 +178,6 @@
         .lightbox-next { right: -60px; }
         .lightbox-close { position: absolute; top: -40px; right: 0; color: white; font-size: 1.8rem; cursor: pointer; font-weight: bold; }
 
-        /* 影片 */
         .video-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
         .video-card { background: #F1F5F9; padding: 15px; border-radius: 15px; border: 1px solid #E2E8F0; text-align: center; }
         .video-title { font-size: 1.1rem; font-weight: bold; color: #334155; margin-bottom: 12px; text-align: left; border-left: 4px solid var(--accent-color); padding-left: 10px; }
@@ -284,10 +284,27 @@
 
     <!-- ==================== JavaScript 邏輯程式碼 ==================== -->
     <script>
+        // 👉 [新增] 1. 將您的 Firebase 設定放入程式碼中
+        const firebaseConfig = {
+            apiKey: "AIzaSyANCWyYbQ0pWjq4VqqjtSIW_XAGnIxyN9o",
+            authDomain: "my-class-58184.firebaseapp.com",
+            databaseURL: "https://my-class-58184-default-rtdb.firebaseio.com",
+            projectId: "my-class-58184",
+            storageBucket: "my-class-58184.firebasestorage.app",
+            messagingSenderId: "175753691856",
+            appId: "1:175753691856:web:f4c275186f0a47c21ad4d5",
+            measurementId: "G-3S1TP49KLD"
+        };
+
+        // 👉 [新增] 2. 初始化 Firebase 雲端資料庫
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
         let isAdmin = false;
 
-        let siteTitle = localStorage.getItem('siteTitle') || "🎈 三年二班的歡樂小天地 🎈";
-        let posts = JSON.parse(localStorage.getItem('posts')) || [];
+        // 預設資料 (用空陣列或預設值取代原本的 localStorage)
+        let siteTitle = "🎈 三年二班的歡樂小天地 🎈";
+        let posts = [];
         
         let defaultTimetable = [
             ["國語", "數學", "自然", "社會", "英語"],
@@ -299,26 +316,39 @@
             ["彈性", "彈性", "彈性", "彈性", "彈性"]  
         ];
         
-        let timetable = JSON.parse(localStorage.getItem('timetable')) || defaultTimetable;
-        
-        while (timetable.length < 7) {
-            timetable.push(["", "", "", "", ""]);
-        }
-        localStorage.setItem('timetable', JSON.stringify(timetable));
-
-        let albums = JSON.parse(localStorage.getItem('albums')) || [];
-        let videos = JSON.parse(localStorage.getItem('videos')) || [];
+        let timetable = defaultTimetable;
+        let albums = [];
+        let videos = [];
 
         let currentAlbumPhotos = [];
         let currentPhotoIndex = 0;
 
-        window.onload = function() {
+        // 👉 [新增] 3. 建立與雲端資料庫的即時連線 (取代 window.onload 的本地讀取)
+        db.ref('/').on('value', (snapshot) => {
+            const data = snapshot.val() || {};
+            
+            // 將雲端抓下來的資料賦予變數
+            siteTitle = data.siteTitle || "🎈 三年二班的歡樂小天地 🎈";
+            posts = data.posts || [];
+            timetable = data.timetable || defaultTimetable;
+            albums = data.albums || [];
+            videos = data.videos || [];
+
+            // 確保課表有 7 節課的長度
+            while (timetable.length < 7) {
+                timetable.push(["", "", "", "", ""]);
+            }
+
+            // 更新網頁畫面
             document.getElementById('site-title').innerText = siteTitle;
             renderPosts();
             renderTimetable();
             renderAlbums();
             renderVideos();
+        });
 
+        window.onload = function() {
+            // 鍵盤左右鍵切換照片的功能保留在這裡
             document.addEventListener('keydown', function(e) {
                 let lightbox = document.getElementById('lightbox');
                 if (lightbox.style.display === 'flex') {
@@ -356,7 +386,8 @@
             if (newTitle && newTitle.trim() !== "") {
                 siteTitle = newTitle.trim();
                 document.getElementById('site-title').innerText = siteTitle;
-                localStorage.setItem('siteTitle', siteTitle);
+                // 👉 [修改] 儲存至雲端
+                db.ref('siteTitle').set(siteTitle);
             }
         }
 
@@ -383,21 +414,26 @@
             };
 
             posts.unshift(newPost);
-            try {
-                localStorage.setItem('posts', JSON.stringify(posts));
-                renderPosts();
+            
+            // 👉 [修改] 儲存至雲端
+            db.ref('posts').set(posts).then(() => {
                 titleInput.value = ''; contentInput.value = ''; fileInput.value = '';
-            } catch (e) {
-                alert("儲存空間已滿，請先刪除一些舊相簿或舊影片再試。");
-                posts.shift();
-            }
+            }).catch((error) => {
+                alert("雲端儲存發生錯誤，請稍後再試。");
+                posts.shift(); // 若儲存失敗則復原
+            });
         }
 
         function deletePost(id) {
             if (confirm('確定要刪除這篇公告嗎？')) {
+                let originalPosts = [...posts];
                 posts = posts.filter(p => p.id !== id);
-                localStorage.setItem('posts', JSON.stringify(posts));
-                renderPosts();
+                
+                // 👉 [修改] 儲存至雲端
+                db.ref('posts').set(posts).catch((error) => {
+                    posts = originalPosts; // 若儲存失敗則復原
+                    alert("雲端刪除失敗，請再試一次。");
+                });
             }
         }
 
@@ -438,8 +474,8 @@
                             let newSubject = prompt(`修改 第${row+1}節 星期${['一','二','三','四','五'][col]} 的科目：`, td.innerText);
                             if (newSubject !== null) {
                                 timetable[row][col] = newSubject.trim();
-                                localStorage.setItem('timetable', JSON.stringify(timetable));
-                                renderTimetable();
+                                // 👉 [修改] 儲存至雲端
+                                db.ref('timetable').set(timetable);
                             }
                         }
                     };
@@ -451,7 +487,7 @@
 
         /* ---------------- 相簿與圖片處理功能 ---------------- */
 
-        // [新增] 圖片壓縮與調整大小的功能 (核心解決方案)
+        // [維持不變] 圖片壓縮與調整大小的功能 (核心解決方案)
         function compressImage(file, maxWidth = 800) {
             return new Promise((resolve) => {
                 let reader = new FileReader();
@@ -462,7 +498,6 @@
                         let width = img.width;
                         let height = img.height;
 
-                        // 如果圖片寬度大於限制，進行等比例縮小
                         if (width > maxWidth) {
                             height = Math.round((maxWidth / width) * height);
                             width = maxWidth;
@@ -473,11 +508,9 @@
                         let ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
                         
-                        // 將圖片轉為較省空間的 JPEG 格式，品質設定為 0.6 (60%)
                         let dataUrl = canvas.toDataURL('image/jpeg', 0.6);
                         resolve(dataUrl);
                     };
-                    // 如果載入錯誤（例如不是圖片），則回傳 null
                     img.onerror = () => resolve(null);
                     img.src = event.target.result;
                 };
@@ -502,15 +535,12 @@
                 return;
             }
 
-            // 鎖定按鈕，顯示處理中（因為壓縮照片需要一點點時間）
             uploadBtn.disabled = true;
             statusText.style.display = 'inline-block';
 
-            // 將所有選擇的照片放入壓縮工具中處理
             let photoPromises = Array.from(fileInput.files).map(file => compressImage(file));
 
             Promise.all(photoPromises).then(photos => {
-                // 過濾掉可能損壞或非圖片的空資料
                 photos = photos.filter(p => p !== null);
 
                 let newAlbum = {
@@ -522,42 +552,32 @@
                 
                 albums.unshift(newAlbum);
 
-                // [新增] 採用 Try-Catch 安全防護，避免空間爆滿導致當機
-                try {
-                    localStorage.setItem('albums', JSON.stringify(albums));
-                    renderAlbums();
+                // 👉 [修改] 改為存入 Firebase 雲端資料庫
+                db.ref('albums').set(albums).then(() => {
                     titleInput.value = '';
                     fileInput.value = '';
-                    alert("✅ 相簿新增成功！");
-                } catch (error) {
-                    console.error("Storage Error:", error);
-                    // 復原記憶體中的陣列
-                    albums.shift();
-                    alert("⚠️ 儲存失敗！\n瀏覽器的空間已經滿了。\n\n💡 解決方法：請先「刪除」一些舊的相簿，再來上傳新的照片。");
-                }
-
-                // 恢復按鈕狀態
-                uploadBtn.disabled = false;
-                statusText.style.display = 'none';
+                    alert("✅ 相簿已成功同步至雲端！");
+                }).catch((error) => {
+                    console.error("Firebase Storage Error:", error);
+                    albums.shift(); // 還原
+                    alert("⚠️ 儲存失敗！網路不穩或單次上傳檔案過大。");
+                }).finally(() => {
+                    uploadBtn.disabled = false;
+                    statusText.style.display = 'none';
+                });
             });
         }
 
         function deleteAlbum(id) {
-            if (confirm('確定要刪除整個活動相簿嗎？(刪除後可釋放儲存空間)')) {
-                // 先備份目前的陣列，以防萬一
+            if (confirm('確定要刪除整個活動相簿嗎？(這將從雲端移除資料)')) {
                 let originalAlbums = [...albums]; 
-                
                 albums = albums.filter(a => a.id !== id);
                 
-                // [新增] 安全防護
-                try {
-                    localStorage.setItem('albums', JSON.stringify(albums));
-                    renderAlbums();
-                } catch (error) {
-                    // 如果還是報錯，將資料還原並提示
+                // 👉 [修改] 刪除後更新雲端資料庫
+                db.ref('albums').set(albums).catch((error) => {
                     albums = originalAlbums;
-                    alert("⚠️ 刪除時發生錯誤，請重新整理網頁後再試。");
-                }
+                    alert("⚠️ 雲端刪除時發生錯誤，請稍後再試。");
+                });
             }
         }
 
@@ -618,9 +638,7 @@
             let title = titleInput.value.trim();
             let url = urlInput.value.trim();
             
-            if (!title) {
-                title = "精彩影片";
-            }
+            if (!title) { title = "精彩影片"; }
 
             let videoId = extractYouTubeID(url);
 
@@ -628,15 +646,14 @@
                 let newVideo = { id: videoId, title: title };
                 videos.unshift(newVideo);
                 
-                try {
-                    localStorage.setItem('videos', JSON.stringify(videos));
-                    renderVideos();
+                // 👉 [修改] 寫入雲端資料庫
+                db.ref('videos').set(videos).then(() => {
                     titleInput.value = '';
                     urlInput.value = '';
-                } catch (e) {
+                }).catch((e) => {
                     videos.shift();
-                    alert("儲存空間已滿，請先刪除舊相簿或影片再試。");
-                }
+                    alert("雲端儲存發生錯誤，請稍後再試。");
+                });
             } else {
                 alert('請輸入有效的 YouTube 影片網址！');
             }
@@ -654,16 +671,15 @@
         }
 
         function deleteVideo(index) {
-            if (confirm('確定要刪除這部影片嗎？')) {
+            if (confirm('確定要從雲端刪除這部影片嗎？')) {
                 let originalVideos = [...videos];
                 videos.splice(index, 1);
-                try {
-                    localStorage.setItem('videos', JSON.stringify(videos));
-                    renderVideos();
-                } catch(e) {
+                
+                // 👉 [修改] 刪除後同步至雲端
+                db.ref('videos').set(videos).catch((e) => {
                     videos = originalVideos;
-                    alert("刪除失敗，請重新整理網頁再試。");
-                }
+                    alert("刪除失敗，請確認網路連線再試。");
+                });
             }
         }
 
